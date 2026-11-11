@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://pgeenbnv44ss"]
+
+[ext_resource type="PackedScene" uid="uid://cwtuntamd8a3e" path="res://Scenes/player.tscn" id="1_lq7nq"]
+[ext_resource type="Script" uid="uid://dj5dq785dmp2h" path="res://Scripts/VidaPlayer.gd" id="2_nnts3"]
+[ext_resource type="Script" uid="uid://du35cihqu5ey2" path="res://Scripts/BotIA.gd" id="2_ra5jo"]
+[ext_resource type="Script" uid="uid://bpja1g2xp04ym" path="res://Scripts/AtaquePlayer.gd" id="3_kcpg1"]
+[ext_resource type="Script" uid="uid://btrniclrdalvf" path="res://Scripts/VidaInimigo.gd" id="4_1v1nj"]
+[ext_resource type="Script" uid="uid://2iwnposr48pw" path="res://Scripts/Void.gd" id="6_csrox"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pulwk"]
+size = Vector2(128, 126)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gqy2o"]
+size = Vector2(127, 127)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ok625"]
+size = Vector2(2271, 191)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nexwh"]
+size = Vector2(943, 20)
+
+[node name="Arena" type="Node2D" unique_id=603213659]
+
+[node name="Player" parent="." unique_id=1637337339 instance=ExtResource("1_lq7nq")]
+position = Vector2(378, 238)
+scale = Vector2(0.4, 0.4)
+
+[node name="VidaPlayer" type="Node" parent="Player" unique_id=1218032847]
+script = ExtResource("2_nnts3")
+
+[node name="AtaquePlayer" type="Node2D" parent="Player" unique_id=713765750]
+script = ExtResource("3_kcpg1")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Player" unique_id=857646877]
+shape = SubResource("RectangleShape2D_pulwk")
+
+[node name="Bot" parent="." unique_id=615438345 instance=ExtResource("1_lq7nq")]
+position = Vector2(948, 230)
+scale = Vector2(0.4, 0.4)
+controle_por_ia = true
+
+[node name="IA" type="Node" parent="Bot" unique_id=1072615873 node_paths=PackedStringArray("alvo")]
+script = ExtResource("2_ra5jo")
+alvo = NodePath("../../Player")
+
+[node name="VidaInimigo" type="Node" parent="Bot" unique_id=1433534740]
+script = ExtResource("4_1v1nj")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Bot" unique_id=1625721442]
+position = Vector2(-0.5, 0.5)
+shape = SubResource("RectangleShape2D_gqy2o")
+
+[node name="Void" type="Area2D" parent="." unique_id=1734938906]
+position = Vector2(228, 473)
+script = ExtResource("6_csrox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Void" unique_id=378371531]
+position = Vector2(330.5, 151)
+shape = SubResource("RectangleShape2D_ok625")
+
+[node name="Plataforma" type="StaticBody2D" parent="." unique_id=1595838619]
+position = Vector2(185, 347)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Plataforma" unique_id=1129701615]
+position = Vector2(461.5, 0)
+shape = SubResource("RectangleShape2D_nexwh")
+
+[node name="Polygon2D" type="Polygon2D" parent="Plataforma" unique_id=1423894915]
