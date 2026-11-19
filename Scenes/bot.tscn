@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://y3eejb817a"]
+
+[ext_resource type="Texture2D" uid="uid://bcol8yuers2cm" path="res://icon.svg" id="1_ccb4n"]
+[ext_resource type="Script" uid="uid://0pwfdd2i17t1" path="res://Scripts/Characters/Bot.gd" id="1_pul5b"]
+[ext_resource type="Script" uid="uid://bhimsd2y3oxrj" path="res://Scripts/Characters/BotIA.gd" id="3_ch2fi"]
+[ext_resource type="Script" uid="uid://bwkuiurlb7pgt" path="res://Scenes/AtaqueBot.gd" id="4_gdc2h"]
+[ext_resource type="Script" uid="uid://dievt8b6at2fs" path="res://Scenes/VidaBot.gd" id="5_dl46b"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_iyva0"]
+size = Vector2(127.500015, 127.50001)
+
+[node name="Bot" type="CharacterBody2D" unique_id=1679805556]
+scale = Vector2(0.4, 0.4)
+script = ExtResource("1_pul5b")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=861401413]
+texture = ExtResource("1_ccb4n")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=488067929]
+position = Vector2(-1.2500069, 1.2500105)
+scale = Vector2(0.99999976, 0.99999976)
+shape = SubResource("RectangleShape2D_iyva0")
+
+[node name="IA" type="Node" parent="." unique_id=41440795]
+script = ExtResource("3_ch2fi")
+
+[node name="AtaqueBot" type="Node2D" parent="." unique_id=806202163]
+script = ExtResource("4_gdc2h")
+
+[node name="VidaBot" type="Node" parent="." unique_id=1014568203]
+script = ExtResource("5_dl46b")

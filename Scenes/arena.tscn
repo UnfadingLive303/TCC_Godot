@@ -1,17 +1,11 @@
 [gd_scene format=3 uid="uid://pgeenbnv44ss"]
 
 [ext_resource type="PackedScene" uid="uid://cwtuntamd8a3e" path="res://Scenes/player.tscn" id="1_lq7nq"]
-[ext_resource type="Script" uid="uid://dj5dq785dmp2h" path="res://Scripts/VidaPlayer.gd" id="2_nnts3"]
-[ext_resource type="Script" uid="uid://du35cihqu5ey2" path="res://Scripts/BotIA.gd" id="2_ra5jo"]
-[ext_resource type="Script" uid="uid://bpja1g2xp04ym" path="res://Scripts/AtaquePlayer.gd" id="3_kcpg1"]
-[ext_resource type="Script" uid="uid://btrniclrdalvf" path="res://Scripts/VidaInimigo.gd" id="4_1v1nj"]
 [ext_resource type="Script" uid="uid://2iwnposr48pw" path="res://Scripts/Void.gd" id="6_csrox"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_pulwk"]
-size = Vector2(128, 126)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_gqy2o"]
-size = Vector2(127, 127)
+[ext_resource type="Texture2D" uid="uid://dbfibg8dxrth8" path="res://Assets/11f5929f-83ef-400d-b3aa-c922d7f5c597.png" id="7_g2joa"]
+[ext_resource type="Texture2D" uid="uid://c1sthpwecdmm7" path="res://Assets/Design sem nome.png" id="7_iyva0"]
+[ext_resource type="PackedScene" uid="uid://y3eejb817a" path="res://Scenes/bot.tscn" id="7_stc3i"]
+[ext_resource type="Script" uid="uid://dsakirudcjwuw" path="res://Scripts/GerenciadorRespawn.gd" id="8_cs8mb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ok625"]
 size = Vector2(2271, 191)
@@ -21,37 +15,8 @@ size = Vector2(943, 20)
 
 [node name="Arena" type="Node2D" unique_id=603213659]
 
-[node name="Player" parent="." unique_id=1637337339 instance=ExtResource("1_lq7nq")]
-position = Vector2(378, 238)
-scale = Vector2(0.4, 0.4)
-
-[node name="VidaPlayer" type="Node" parent="Player" unique_id=1218032847]
-script = ExtResource("2_nnts3")
-
-[node name="AtaquePlayer" type="Node2D" parent="Player" unique_id=713765750]
-script = ExtResource("3_kcpg1")
-
-[node name="CollisionShape2D2" type="CollisionShape2D" parent="Player" unique_id=857646877]
-shape = SubResource("RectangleShape2D_pulwk")
-
-[node name="Bot" parent="." unique_id=615438345 instance=ExtResource("1_lq7nq")]
-position = Vector2(948, 230)
-scale = Vector2(0.4, 0.4)
-controle_por_ia = true
-
-[node name="IA" type="Node" parent="Bot" unique_id=1072615873 node_paths=PackedStringArray("alvo")]
-script = ExtResource("2_ra5jo")
-alvo = NodePath("../../Player")
-
-[node name="VidaInimigo" type="Node" parent="Bot" unique_id=1433534740]
-script = ExtResource("4_1v1nj")
-
-[node name="CollisionShape2D2" type="CollisionShape2D" parent="Bot" unique_id=1625721442]
-position = Vector2(-0.5, 0.5)
-shape = SubResource("RectangleShape2D_gqy2o")
-
 [node name="Void" type="Area2D" parent="." unique_id=1734938906]
-position = Vector2(228, 473)
+position = Vector2(245, 467)
 script = ExtResource("6_csrox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Void" unique_id=378371531]
@@ -66,3 +31,32 @@ position = Vector2(461.5, 0)
 shape = SubResource("RectangleShape2D_nexwh")
 
 [node name="Polygon2D" type="Polygon2D" parent="Plataforma" unique_id=1423894915]
+
+[node name="Sprite2D" type="Sprite2D" parent="Plataforma" unique_id=677295932]
+visibility_layer = 2
+position = Vector2(466, 36)
+scale = Vector2(0.5879369, 0.4447576)
+texture = ExtResource("7_g2joa")
+
+[node name="GerenciadorRespawn" type="Node" parent="." unique_id=620754028 node_paths=PackedStringArray("jogador", "bot", "spawner_jogador", "spawner_bot")]
+script = ExtResource("8_cs8mb")
+jogador = NodePath("../Player")
+bot = NodePath("../Bot")
+cena_jogador = ExtResource("1_lq7nq")
+cena_bot = ExtResource("7_stc3i")
+spawner_jogador = NodePath("../PosicaoJogador")
+spawner_bot = NodePath("../PosicaoBot")
+sprite_plataforma = ExtResource("7_iyva0")
+tamanho_plataforma = Vector2(250, 170)
+
+[node name="PosicaoJogador" type="Marker2D" parent="." unique_id=487685993]
+position = Vector2(291, 155)
+
+[node name="PosicaoBot" type="Marker2D" parent="." unique_id=387259313]
+position = Vector2(1000, 152)
+
+[node name="Bot" parent="." unique_id=1679805556 instance=ExtResource("7_stc3i")]
+position = Vector2(1002, 159)
+
+[node name="Player" parent="." unique_id=1637337339 instance=ExtResource("1_lq7nq")]
+position = Vector2(289, 147.00002)

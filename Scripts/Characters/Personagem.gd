@@ -19,10 +19,8 @@ extends CharacterBody2D
 @export var tempo_recuperacao: float = 0.25
 
 var pulos_realizados: int = 0
-
 var direcao_externa: float = 0.0
 var pulo_solicitado: bool = false
-
 var tempo_knockback: float = 0.0
 
 
@@ -45,6 +43,7 @@ func aplicar_gravidade(delta: float) -> void:
 		pulos_realizados = 0
 
 
+
 func movimentar() -> void:
 	var direcao: float = 0.0
 
@@ -57,6 +56,12 @@ func movimentar() -> void:
 		)
 
 	velocity.x = direcao * velocidade
+
+	if not controle_por_ia and absf(direcao) > 0.01:
+		var sprite = get_node_or_null("Sprite2D")
+
+		if sprite != null:
+			sprite.flip_h = direcao < 0.0
 
 
 func executar_pulo() -> void:
@@ -82,10 +87,8 @@ func receber_knockback(direcao: Vector2, forca: float) -> void:
 		return
 
 	velocity = direcao.normalized() * forca
-
 	tempo_knockback = tempo_recuperacao
 
-	# Impede que a IA continue tentando andar durante o impacto.
 	direcao_externa = 0.0
 	pulo_solicitado = false
 

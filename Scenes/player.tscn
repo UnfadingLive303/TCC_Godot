@@ -2,12 +2,15 @@
 
 [ext_resource type="Script" uid="uid://dvdi5wp8nqfxt" path="res://Scripts/Characters/Personagem.gd" id="1_cvnsp"]
 [ext_resource type="Texture2D" uid="uid://bcol8yuers2cm" path="res://icon.svg" id="2_6t5aa"]
+[ext_resource type="Script" uid="uid://dj5dq785dmp2h" path="res://Scripts/VidaPlayer.gd" id="3_vgqql"]
+[ext_resource type="Script" uid="uid://bpja1g2xp04ym" path="res://Scripts/AtaquePlayer.gd" id="4_fkybt"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vgqql"]
 size = Vector2(128, 127)
 
 [node name="Player" type="CharacterBody2D" unique_id=1637337339]
 position = Vector2(147, 124)
+scale = Vector2(0.4, 0.4)
 script = ExtResource("1_cvnsp")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=50010121]
@@ -15,4 +18,11 @@ texture = ExtResource("2_6t5aa")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=168510354]
 position = Vector2(0, -0.5)
+scale = Vector2(0.4, 0.4)
 shape = SubResource("RectangleShape2D_vgqql")
+
+[node name="VidaPlayer" type="Node" parent="." unique_id=1108058128]
+script = ExtResource("3_vgqql")
+
+[node name="AtaquePlayer" type="Node2D" parent="." unique_id=1435672044]
+script = ExtResource("4_fkybt")

@@ -1,15 +1,17 @@
 
 extends Node
 
-signal vida_alterada(vida_atual: int, vida_maxima: int)
-signal morreu
+signal porcentagem_alterada(nova_porcentagem: float)
 
-@export_group("Configuração de vida")
-@export var vida_maxima: int = 100
+@export_group("Porcentagem")
+@export var porcentagem_inicial: float = 0.0
 
-var vida_atual: int = 0
+@export_group("Knockback")
+@export var multiplicador_knockback: float = 1.0
+@export var aumento_porcentagem: float = 1.0
+
+var porcentagem: float = 0.0
 var personagem: CharacterBody2D
-var esta_morto: bool = false
 
 
 func _ready() -> void:
@@ -19,41 +21,39 @@ func _ready() -> void:
 		push_error("VidaPlayer precisa ser filho do jogador!")
 		return
 
-	vida_atual = vida_maxima
-	vida_alterada.emit(vida_atual, vida_maxima)
+	porcentagem = porcentagem_inicial
+	porcentagem_alterada.emit(porcentagem)
 
-	print("Vida do jogador: ", vida_atual)
+	print("VIDA PLAYER: Sistema iniciado!")
+	print("VIDA PLAYER: Porcentagem: ", porcentagem, "%")
 
 
-func receber_dano(quantidade: int) -> void:
-	if esta_morto or quantidade <= 0:
+func receber_ataque(quantidade: float, direcao: Vector2, forca_base: float) -> void:
+	if not is_instance_valid(personagem):
 		return
 
-	vida_atual = maxi(vida_atual - quantidade, 0)
-	vida_alterada.emit(vida_atual, vida_maxima)
-
-	print("Vida do jogador: ", vida_atual, "/", vida_maxima)
-
-	if vida_atual <= 0:
-		morrer()
-
-
-func curar(quantidade: int) -> void:
-	if esta_morto or quantidade <= 0:
+	if quantidade <= 0.0:
 		return
 
-	vida_atual = mini(vida_atual + quantidade, vida_maxima)
-	vida_alterada.emit(vida_atual, vida_maxima)
+	porcentagem += quantidade * aumento_porcentagem
+	porcentagem_alterada.emit(porcentagem)
 
-	print("Jogador curado: ", vida_atual, "/", vida_maxima)
+	var multiplicador: float = (1.0 + porcentagem / 100.0) * multiplicador_knockback
+	var forca_final: float = forca_base * multiplicador
+
+	if personagem.has_method("receber_knockback"):
+		personagem.receber_knockback(direcao, forca_final)
+
+	print("VIDA PLAYER: Recebeu ataque!")
+	print("VIDA PLAYER: Porcentagem: ", porcentagem, "%")
+	print("VIDA PLAYER: Knockback: ", forca_final)
 
 
-func morrer() -> void:
-	if esta_morto:
-		return
+func resetar_porcentagem() -> void:
+	porcentagem = 0.0
+	porcentagem_alterada.emit(porcentagem)
+	print("VIDA PLAYER: Porcentagem reiniciada!")
 
-	esta_morto = true
-	print("O jogador foi derrotado!")
 
-	morreu.emit()
-	personagem.queue_free()
+func obter_porcentagem() -> float:
+	return porcentagem

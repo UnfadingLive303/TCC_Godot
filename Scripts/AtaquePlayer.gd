@@ -1,40 +1,23 @@
 
 extends Node2D
 
-@export_group("Controles")
-@export var acao_ataque: StringName = &"p1_ataque"
-@export var acao_ataque_cima: StringName = &"p1_ataque_cima"
-@export var acao_ataque_baixo: StringName = &"p1_ataque_baixo"
+@export_group("Ataque")
+@export var dano: float = 10.0
+@export var forca_knockback: float = 350.0
+@export var tempo_ataque: float = 0.25
+@export var intervalo_ataque: float = 0.4
 
-@export_group("Porcentagem")
-@export var percentual_lateral: float = 12.0
-@export var percentual_cima: float = 10.0
-@export var percentual_baixo: float = 14.0
-
-@export_group("Knockback")
-@export var forca_base_knockback: float = 300.0
-
-@export_group("Tempo")
-@export var duracao_ataque: float = 0.16
-@export var intervalo_ataques: float = 0.38
-
-@export_group("Alcance")
-@export var alcance_lateral: float = 55.0
-@export var alcance_vertical: float = 55.0
+@export_group("Hitbox")
+@export var tamanho_hitbox: Vector2 = Vector2(100, 70)
+@export var distancia_hitbox: float = 65.0
 
 var personagem: CharacterBody2D
 var hitbox: Area2D
-var forma_hitbox: CollisionShape2D
 
-var ataque_ativo: bool = false
-var tempo_ataque: float = 0.0
-var tempo_recarga: float = 0.0
+var tempo_restante: float = 0.0
+var atacando: bool = false
 
-var direcao_olhando: float = 1.0
-var direcao_knockback: Vector2 = Vector2.RIGHT
-var percentual_atual: float = 0.0
-
-var alvos_atingidos: Dictionary = {}
+var alvos_atingidos: Array[Node] = []
 
 
 func _ready() -> void:
@@ -46,117 +29,109 @@ func _ready() -> void:
 
 	criar_hitbox()
 
-
-func criar_hitbox() -> void:
-	hitbox = Area2D.new()
-	hitbox.name = "Hitbox"
-	hitbox.collision_layer = 0
-	hitbox.collision_mask = 1
-	hitbox.monitoring = true
-
-	add_child(hitbox)
-
-	forma_hitbox = CollisionShape2D.new()
-	forma_hitbox.name = "CollisionShape2D"
-
-	var retangulo := RectangleShape2D.new()
-	retangulo.size = Vector2(75, 40)
-
-	forma_hitbox.shape = retangulo
-	forma_hitbox.disabled = true
-
-	hitbox.add_child(forma_hitbox)
+	print("JOGADOR: Sistema de ataque iniciado!")
 
 
 func _physics_process(delta: float) -> void:
-	if personagem == null:
+	tempo_restante = maxf(tempo_restante - delta, 0.0)
+
+	if Input.is_action_just_pressed("ataque_1"):
+		atacar()
+
+	if atacando:
+		detectar_alvos()
+
+
+func criar_hitbox() -> void:
+	hitbox = Area2D.new()
+	hitbox.name = "HitboxJogador"
+
+	hitbox.collision_layer = 0
+	hitbox.collision_mask = 1
+
+	hitbox.monitoring = true
+	hitbox.monitorable = false
+
+	var forma := CollisionShape2D.new()
+	var retangulo := RectangleShape2D.new()
+
+	retangulo.size = tamanho_hitbox
+	forma.shape = retangulo
+
+	hitbox.add_child(forma)
+	add_child(hitbox)
+
+	print("JOGADOR: Hitbox criada!")
+
+
+func atualizar_hitbox() -> void:
+	var sprite = personagem.get_node_or_null("Sprite2D")
+
+	var direcao: float = 1.0
+
+	if sprite != null and sprite.flip_h:
+		direcao = -1.0
+
+	hitbox.position = Vector2(
+		distancia_hitbox * direcao,
+		0.0
+	)
+
+
+func atacar() -> void:
+	if atacando or tempo_restante > 0.0:
 		return
 
-	if personagem.velocity.x > 1.0:
-		direcao_olhando = 1.0
-	elif personagem.velocity.x < -1.0:
-		direcao_olhando = -1.0
-
-	tempo_recarga = maxf(tempo_recarga - delta, 0.0)
-
-	if ataque_ativo:
-		tempo_ataque -= delta
-		verificar_acertos()
-
-		if tempo_ataque <= 0.0:
-			finalizar_ataque()
-
-	elif tempo_recarga <= 0.0:
-		if Input.is_action_just_pressed(acao_ataque):
-			iniciar_ataque()
-
-
-func iniciar_ataque() -> void:
-	ataque_ativo = true
-	tempo_ataque = duracao_ataque
-	tempo_recarga = intervalo_ataques
+	atacando = true
+	tempo_restante = intervalo_ataque
 
 	alvos_atingidos.clear()
 
-	if Input.is_action_pressed(acao_ataque_cima):
-		percentual_atual = percentual_cima
+	atualizar_hitbox()
 
-		hitbox.position = Vector2(0, -alcance_vertical)
-		forma_hitbox.shape.size = Vector2(45, 75)
+	print("JOGADOR: Ataque iniciado!")
 
-		direcao_knockback = Vector2(0, -1)
+	# Aguarda a atualização da física.
+	await get_tree().physics_frame
 
-	elif Input.is_action_pressed(acao_ataque_baixo):
-		percentual_atual = percentual_baixo
+	if not is_inside_tree():
+		return
 
-		hitbox.position = Vector2(0, alcance_vertical)
-		forma_hitbox.shape.size = Vector2(65, 55)
+	await get_tree().create_timer(tempo_ataque).timeout
 
-		direcao_knockback = Vector2(direcao_olhando, 0.5).normalized()
+	atacando = false
 
-	else:
-		percentual_atual = percentual_lateral
-
-		hitbox.position = Vector2(
-			alcance_lateral * direcao_olhando,
-			0
-		)
-
-		forma_hitbox.shape.size = Vector2(75, 40)
-
-		direcao_knockback = Vector2(
-			direcao_olhando,
-			-0.35
-		).normalized()
-
-	forma_hitbox.set_deferred("disabled", false)
+	print("JOGADOR: Ataque finalizado!")
 
 
-func verificar_acertos() -> void:
+func detectar_alvos() -> void:
+	if not is_instance_valid(hitbox):
+		return
+
 	for corpo in hitbox.get_overlapping_bodies():
 
 		if corpo == personagem:
 			continue
 
-		var porcentagem = corpo.get_node_or_null("VidaInimigo")
-
-		if porcentagem == null:
+		if alvos_atingidos.has(corpo):
 			continue
 
-		var id_alvo: int = corpo.get_instance_id()
+		var vida = corpo.get_node_or_null("VidaBot")
 
-		if alvos_atingidos.has(id_alvo):
+		if vida == null:
 			continue
 
-		alvos_atingidos[id_alvo] = true
+		alvos_atingidos.append(corpo)
 
-		porcentagem.receber_ataque(
-			percentual_atual,
-			direcao_knockback,
-			forca_base_knockback
+		var direcao: Vector2 = (
+			corpo.global_position - personagem.global_position
 		)
 
+		vida.receber_ataque(
+			dano,
+			direcao,
+			forca_knockback
+		)
 
-func finalizar_ataque() -> void:
-	ataque_ativo = false
-	forma_hitbox.set_deferred("disabled", true)
+		print("JOGADOR: Bot atingido!")
+		print("JOGADOR: Dano causado: ", dano)
