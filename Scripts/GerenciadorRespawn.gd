@@ -19,9 +19,15 @@ extends Node
 
 @export_group("Plataforma temporária")
 @export var sprite_plataforma: Texture2D
-@export var tamanho_plataforma: Vector2 = Vector2(120, 12)
-@export var deslocamento_plataforma_y: float = 50.0
+@export var tamanho_visual_plataforma: Vector2 = Vector2(250, 150)
+@export var tamanho_colisao_plataforma: Vector2 = Vector2(130, 50)
+@export var folga_plataforma: float = 0.0
 @export var tempo_plataforma: float = 5.0
+@export var altura_fallback_personagem: float = 64.0
+
+@export_group("Sensor da plataforma")
+@export var margem_sensor: float = 30.0
+@export var altura_sensor: float = 80.0
 
 var vidas_jogador: int = 0
 var vidas_bot: int = 0
@@ -47,28 +53,20 @@ func _ready() -> void:
 
 	atualizar_alvo_bot()
 
-	print("================================")
-	print("GERENCIADOR DE RESPAWN INICIADO")
-	print("Vidas do jogador: ", vidas_jogador)
-	print("Vidas do bot: ", vidas_bot)
-	print("================================")
+	print("GERENCIADOR DE RESPAWN INICIADO!")
 
 
 func verificar_configuracao() -> bool:
 	if not is_instance_valid(jogador):
-		push_error("Jogador não configurado no Inspector!")
+		push_error("Jogador não configurado!")
 		return false
 
 	if not is_instance_valid(bot):
-		push_error("Bot não configurado no Inspector!")
+		push_error("Bot não configurado!")
 		return false
 
-	if cena_jogador == null:
-		push_error("Cena Personagem.tscn não configurada!")
-		return false
-
-	if cena_bot == null:
-		push_error("Cena Bot.tscn não configurada!")
+	if cena_jogador == null or cena_bot == null:
+		push_error("Cenas dos personagens não configuradas!")
 		return false
 
 	if not is_instance_valid(spawner_jogador):
@@ -82,47 +80,68 @@ func verificar_configuracao() -> bool:
 	return true
 
 
-func configurar_personagem(personagem: CharacterBody2D, grupo: String) -> void:
+func configurar_personagem(
+	personagem: CharacterBody2D,
+	grupo: String
+) -> void:
 	if not is_instance_valid(personagem):
 		return
 
 	personagem.add_to_group(grupo)
-
-	# Garante que os personagens sejam detectados pelas hitboxes.
-	personagem.collision_layer = personagem.collision_layer | 1
-
-	# Mantém a colisão física com objetos da camada 1.
-	personagem.collision_mask = personagem.collision_mask | 1
-
+	personagem.collision_layer |= 1
+	personagem.collision_mask |= 1
 	personagem.velocity = Vector2.ZERO
-
-	print("COLISÃO CONFIGURADA: ", personagem.name)
 
 	verificar_sistemas_combate(personagem)
 
+	call_deferred("aplicar_excecoes_colisao")
 
-func verificar_sistemas_combate(personagem: CharacterBody2D) -> void:
+
+func verificar_sistemas_combate(
+	personagem: CharacterBody2D
+) -> void:
 	if personagem.is_in_group("jogador"):
 		if personagem.find_child("AtaquePlayer", true, false) == null:
-			push_error("AtaquePlayer não encontrado no jogador!")
+			push_error("AtaquePlayer não encontrado!")
 
 		if personagem.find_child("VidaPlayer", true, false) == null:
-			push_error("VidaPlayer não encontrado no jogador!")
+			push_error("VidaPlayer não encontrado!")
 
 	elif personagem.is_in_group("bot"):
 		if personagem.find_child("AtaqueBot", true, false) == null:
-			push_error("AtaqueBot não encontrado no bot!")
+			push_error("AtaqueBot não encontrado!")
 
 		if personagem.find_child("VidaBot", true, false) == null:
-			push_error("VidaBot não encontrado no bot!")
+			push_error("VidaBot não encontrado!")
+
+
+func aplicar_excecoes_colisao() -> void:
+	var jogadores = get_tree().get_nodes_in_group("jogador")
+	var bots = get_tree().get_nodes_in_group("bot")
+
+	for personagem_jogador in jogadores:
+		for personagem_bot in bots:
+			if not is_instance_valid(personagem_jogador):
+				continue
+
+			if not is_instance_valid(personagem_bot):
+				continue
+
+			personagem_jogador.add_collision_exception_with(
+				personagem_bot
+			)
+
+			personagem_bot.add_collision_exception_with(
+				personagem_jogador
+			)
 
 
 func eliminar_personagem(personagem: CharacterBody2D) -> void:
 	if not is_instance_valid(personagem):
 		return
 
-	var eh_jogador: bool = personagem.is_in_group("jogador")
-	var eh_bot: bool = personagem.is_in_group("bot")
+	var eh_jogador = personagem.is_in_group("jogador")
+	var eh_bot = personagem.is_in_group("bot")
 
 	if eh_jogador:
 		if jogador_derrotado:
@@ -130,12 +149,10 @@ func eliminar_personagem(personagem: CharacterBody2D) -> void:
 
 		jogador_derrotado = true
 		vidas_jogador -= 1
-
-		print("JOGADOR ELIMINADO!")
-		print("Vidas restantes: ", vidas_jogador)
-
 		jogador = null
 		personagem.queue_free()
+
+		print("JOGADOR ELIMINADO! Vidas: ", vidas_jogador)
 
 		if vidas_jogador > 0:
 			await get_tree().create_timer(tempo_respawn).timeout
@@ -143,7 +160,7 @@ func eliminar_personagem(personagem: CharacterBody2D) -> void:
 			if is_inside_tree():
 				await ressuscitar_jogador()
 		else:
-			print("JOGADOR SEM VIDAS! FIM DE JOGO.")
+			print("JOGADOR SEM VIDAS!")
 
 	elif eh_bot:
 		if bot_derrotado:
@@ -151,12 +168,10 @@ func eliminar_personagem(personagem: CharacterBody2D) -> void:
 
 		bot_derrotado = true
 		vidas_bot -= 1
-
-		print("BOT ELIMINADO!")
-		print("Vidas restantes: ", vidas_bot)
-
 		bot = null
 		personagem.queue_free()
+
+		print("BOT ELIMINADO! Vidas: ", vidas_bot)
 
 		if vidas_bot > 0:
 			await get_tree().create_timer(tempo_respawn).timeout
@@ -166,27 +181,24 @@ func eliminar_personagem(personagem: CharacterBody2D) -> void:
 		else:
 			print("BOT SEM VIDAS!")
 
-	else:
-		push_warning("Personagem não reconhecido: " + personagem.name)
-
 
 func ressuscitar_jogador() -> void:
 	var novo_jogador = cena_jogador.instantiate() as CharacterBody2D
 
 	if novo_jogador == null:
-		push_error("Falha ao instanciar Personagem.tscn!")
+		push_error("Falha ao criar jogador!")
 		return
-
-	configurar_personagem(novo_jogador, "jogador")
 
 	get_parent().add_child(novo_jogador)
 
+	configurar_personagem(novo_jogador, "jogador")
+
 	novo_jogador.global_position = spawner_jogador.global_position
+	novo_jogador.velocity = Vector2.ZERO
 
 	jogador = novo_jogador
 	jogador_derrotado = false
 
-	# Aguarda a física reconhecer o novo personagem.
 	await get_tree().physics_frame
 
 	if not is_instance_valid(jogador):
@@ -196,58 +208,74 @@ func ressuscitar_jogador() -> void:
 	atualizar_alvo_bot()
 
 	print("JOGADOR RESSUSCITOU!")
-	print("Vidas disponíveis: ", vidas_jogador)
 
 
 func ressuscitar_bot() -> void:
 	var novo_bot = cena_bot.instantiate() as CharacterBody2D
 
 	if novo_bot == null:
-		push_error("Falha ao instanciar Bot.tscn!")
+		push_error("Falha ao criar bot!")
 		return
-
-	configurar_personagem(novo_bot, "bot")
 
 	get_parent().add_child(novo_bot)
 
+	configurar_personagem(novo_bot, "bot")
+
 	novo_bot.global_position = spawner_bot.global_position
+	novo_bot.velocity = Vector2.ZERO
 
 	bot = novo_bot
 	bot_derrotado = false
 
-	# Aguarda a física reconhecer o novo personagem.
 	await get_tree().physics_frame
 
 	if not is_instance_valid(bot):
 		return
 
-	atualizar_alvo_bot()
 	criar_plataforma(bot)
+	atualizar_alvo_bot()
 
 	print("BOT RESSUSCITOU!")
-	print("Vidas disponíveis: ", vidas_bot)
 
 
 func atualizar_alvo_bot() -> void:
 	if not is_instance_valid(bot):
-		push_error("Gerenciador: Bot não existe!")
 		return
 
 	if not is_instance_valid(jogador):
-		push_error("Gerenciador: Jogador não existe!")
 		return
 
 	var ia = bot.get_node_or_null("IA")
 
 	if ia == null:
-		push_error("Gerenciador: Nó IA não encontrado!")
+		push_error("Nó IA não encontrado!")
 		return
 
 	ia.set("alvo", jogador)
 
-	print("GERENCIADOR: Alvo do bot atualizado!")
-	print("Bot: ", bot.name)
-	print("Alvo: ", jogador.name)
+
+func obter_posicao_dos_pes(
+	personagem: CharacterBody2D
+) -> float:
+	var forma = personagem.find_child(
+		"CollisionShape2D",
+		true,
+		false
+	) as CollisionShape2D
+
+	if forma == null or forma.shape == null:
+		return (
+			personagem.global_position.y
+			+ altura_fallback_personagem / 2.0
+		)
+
+	var limites: Rect2 = forma.shape.get_rect()
+	var escala_y: float = forma.global_scale.y
+
+	return (
+		forma.global_position.y
+		+ limites.end.y * escala_y
+	)
 
 
 func criar_plataforma(personagem: CharacterBody2D) -> void:
@@ -258,37 +286,45 @@ func criar_plataforma(personagem: CharacterBody2D) -> void:
 	plataforma.name = "PlataformaTemporaria"
 
 	plataforma.collision_layer = 1
-	plataforma.collision_mask = 1
+	plataforma.collision_mask = 0
 
+	# COLISÃO: 130 x 50.
 	var colisao := CollisionShape2D.new()
 	var retangulo := RectangleShape2D.new()
 
-	retangulo.size = tamanho_plataforma
+	retangulo.size = tamanho_colisao_plataforma
 	colisao.shape = retangulo
 
 	plataforma.add_child(colisao)
 
+	# SPRITE: 250 x 150.
 	if sprite_plataforma != null:
 		var sprite := Sprite2D.new()
 		sprite.texture = sprite_plataforma
 
-		var tamanho_textura = sprite_plataforma.get_size()
+		var tamanho_textura: Vector2 = sprite_plataforma.get_size()
 
 		if tamanho_textura.x > 0 and tamanho_textura.y > 0:
 			sprite.scale = Vector2(
-				tamanho_plataforma.x / tamanho_textura.x,
-				tamanho_plataforma.y / tamanho_textura.y
+				tamanho_visual_plataforma.x / tamanho_textura.x,
+				tamanho_visual_plataforma.y / tamanho_textura.y
 			)
 
 		plataforma.add_child(sprite)
 
 	get_parent().add_child(plataforma)
 
-	plataforma.global_position = (
-		personagem.global_position
-		+ Vector2(0, deslocamento_plataforma_y)
+	# Posiciona a superfície da colisão na altura dos pés.
+	var pe_y: float = obter_posicao_dos_pes(personagem)
+
+	var meia_altura: float = tamanho_colisao_plataforma.y / 2.0
+
+	plataforma.global_position = Vector2(
+		personagem.global_position.x,
+		pe_y + meia_altura + folga_plataforma
 	)
 
+	# Sensor de saída independente.
 	var sensor := Area2D.new()
 	sensor.name = "SensorSaida"
 
@@ -301,13 +337,13 @@ func criar_plataforma(personagem: CharacterBody2D) -> void:
 	var retangulo_sensor := RectangleShape2D.new()
 
 	retangulo_sensor.size = Vector2(
-		tamanho_plataforma.x + 40,
-		130
+		tamanho_colisao_plataforma.x + margem_sensor,
+		altura_sensor
 	)
 
 	forma_sensor.shape = retangulo_sensor
-
 	sensor.add_child(forma_sensor)
+
 	plataforma.add_child(sensor)
 
 	sensor.body_exited.connect(
@@ -317,7 +353,9 @@ func criar_plataforma(personagem: CharacterBody2D) -> void:
 		)
 	)
 
-	print("Plataforma temporária criada!")
+	print("PLATAFORMA CRIADA!")
+	print("Tamanho visual: ", tamanho_visual_plataforma)
+	print("Tamanho da colisão: ", tamanho_colisao_plataforma)
 
 	remover_plataforma_apos_tempo(plataforma)
 
@@ -331,7 +369,7 @@ func _on_plataforma_body_exited(
 		return
 
 	if is_instance_valid(plataforma):
-		print("Personagem saiu da plataforma!")
+		print("PERSONAGEM SAIU DA PLATAFORMA!")
 		plataforma.queue_free()
 
 
@@ -341,5 +379,5 @@ func remover_plataforma_apos_tempo(
 	await get_tree().create_timer(tempo_plataforma).timeout
 
 	if is_instance_valid(plataforma):
-		print("Tempo da plataforma acabou!")
 		plataforma.queue_free()
+		print("PLATAFORMA REMOVIDA!")

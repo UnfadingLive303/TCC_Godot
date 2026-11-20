@@ -47,7 +47,6 @@ cena_bot = ExtResource("7_stc3i")
 spawner_jogador = NodePath("../PosicaoJogador")
 spawner_bot = NodePath("../PosicaoBot")
 sprite_plataforma = ExtResource("7_iyva0")
-tamanho_plataforma = Vector2(250, 170)
 
 [node name="PosicaoJogador" type="Marker2D" parent="." unique_id=487685993]
 position = Vector2(291, 155)
