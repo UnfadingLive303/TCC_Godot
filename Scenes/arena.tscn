@@ -2,13 +2,14 @@
 
 [ext_resource type="PackedScene" uid="uid://cwtuntamd8a3e" path="res://Scenes/player.tscn" id="1_lq7nq"]
 [ext_resource type="Script" uid="uid://2iwnposr48pw" path="res://Scripts/Void.gd" id="6_csrox"]
+[ext_resource type="Script" uid="uid://d4axo6jaspxx1" path="res://menu/gerenciador_partida.gd" id="7_cs8mb"]
 [ext_resource type="Texture2D" uid="uid://dbfibg8dxrth8" path="res://Assets/11f5929f-83ef-400d-b3aa-c922d7f5c597.png" id="7_g2joa"]
 [ext_resource type="Texture2D" uid="uid://c1sthpwecdmm7" path="res://Assets/Design sem nome.png" id="7_iyva0"]
 [ext_resource type="PackedScene" uid="uid://y3eejb817a" path="res://Scenes/bot.tscn" id="7_stc3i"]
 [ext_resource type="Script" uid="uid://dsakirudcjwuw" path="res://Scripts/GerenciadorRespawn.gd" id="8_cs8mb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ok625"]
-size = Vector2(2271, 191)
+size = Vector2(2385, 191)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nexwh"]
 size = Vector2(943, 20)
@@ -20,7 +21,7 @@ position = Vector2(245, 467)
 script = ExtResource("6_csrox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Void" unique_id=378371531]
-position = Vector2(330.5, 151)
+position = Vector2(387.5, 151)
 shape = SubResource("RectangleShape2D_ok625")
 
 [node name="Plataforma" type="StaticBody2D" parent="." unique_id=1595838619]
@@ -59,3 +60,8 @@ position = Vector2(1002, 159)
 
 [node name="Player" parent="." unique_id=1637337339 instance=ExtResource("1_lq7nq")]
 position = Vector2(289, 147.00002)
+
+[node name="GerenciadorPartida" type="Node" parent="." unique_id=977013899]
+script = ExtResource("7_cs8mb")
+vidas_jogador = 2
+vidas_bot = 2

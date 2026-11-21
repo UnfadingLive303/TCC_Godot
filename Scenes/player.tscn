@@ -9,7 +9,7 @@
 size = Vector2(128, 127)
 
 [node name="Player" type="CharacterBody2D" unique_id=1637337339]
-position = Vector2(147, 124)
+position = Vector2(74.99999, 77.00001)
 scale = Vector2(0.4, 0.4)
 script = ExtResource("1_cvnsp")
 

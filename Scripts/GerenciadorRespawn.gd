@@ -1,4 +1,3 @@
-
 extends Node
 
 @export_group("Personagens")
@@ -17,6 +16,10 @@ extends Node
 @export var vidas_maximas: int = 3
 @export var tempo_respawn: float = 1.5
 
+@export_group("Fim de partida")
+@export var camera_lenta_final: bool = true
+@export_range(0.0, 3.0, 0.1) var atraso_tela_fim: float = 0.8   # segundos (tempo real) até a tela aparecer
+
 @export_group("Plataforma temporária")
 @export var sprite_plataforma: Texture2D
 @export var tamanho_visual_plataforma: Vector2 = Vector2(250, 150)
@@ -34,6 +37,8 @@ var vidas_bot: int = 0
 
 var jogador_derrotado: bool = false
 var bot_derrotado: bool = false
+
+var partida_encerrada: bool = false
 
 
 func _ready() -> void:
@@ -54,6 +59,11 @@ func _ready() -> void:
 	atualizar_alvo_bot()
 
 	print("GERENCIADOR DE RESPAWN INICIADO!")
+
+
+func _exit_tree() -> void:
+	# Garante que a câmera lenta nunca "vaza" para outra cena
+	Engine.time_scale = 1.0
 
 
 func verificar_configuracao() -> bool:
@@ -140,6 +150,10 @@ func eliminar_personagem(personagem: CharacterBody2D) -> void:
 	if not is_instance_valid(personagem):
 		return
 
+	# Depois que a partida acabou, ninguém mais é eliminado/ressuscitado
+	if partida_encerrada:
+		return
+
 	var eh_jogador = personagem.is_in_group("jogador")
 	var eh_bot = personagem.is_in_group("bot")
 
@@ -157,10 +171,11 @@ func eliminar_personagem(personagem: CharacterBody2D) -> void:
 		if vidas_jogador > 0:
 			await get_tree().create_timer(tempo_respawn).timeout
 
-			if is_inside_tree():
+			if is_inside_tree() and not partida_encerrada:
 				await ressuscitar_jogador()
 		else:
 			print("JOGADOR SEM VIDAS!")
+			encerrar_partida(false)   # DERROTA
 
 	elif eh_bot:
 		if bot_derrotado:
@@ -176,10 +191,37 @@ func eliminar_personagem(personagem: CharacterBody2D) -> void:
 		if vidas_bot > 0:
 			await get_tree().create_timer(tempo_respawn).timeout
 
-			if is_inside_tree():
+			if is_inside_tree() and not partida_encerrada:
 				await ressuscitar_bot()
 		else:
 			print("BOT SEM VIDAS!")
+			encerrar_partida(true)   # VITÓRIA
+
+
+func encerrar_partida(venceu: bool) -> void:
+	if partida_encerrada:
+		return
+
+	partida_encerrada = true
+
+	if camera_lenta_final:
+		Engine.time_scale = 0.3
+
+	# O 4º parâmetro (true) faz o timer ignorar a câmera lenta
+	await get_tree().create_timer(atraso_tela_fim, true, false, true).timeout
+
+	Engine.time_scale = 1.0
+
+	if not is_inside_tree():
+		return
+
+	var resultado := (
+		TelaFimDePartida.Resultado.VITORIA
+		if venceu
+		else TelaFimDePartida.Resultado.DERROTA
+	)
+
+	TelaFimDePartida.mostrar(get_tree(), resultado)
 
 
 func ressuscitar_jogador() -> void:

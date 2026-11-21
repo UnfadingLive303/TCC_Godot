@@ -6,7 +6,7 @@ extends CanvasLayer
 ## Uso:
 ##   var t := TransicaoCena.new()
 ##   get_tree().root.add_child(t)
-##   t.iniciar("res://arena.tscn")
+##   t.iniciar("res://arena.tscn", "ENTRANDO NA ARENA")
 
 const QTD_FAIXAS := 14
 const COR_FAIXA := Color("160830")
@@ -21,6 +21,7 @@ var _faixas: Array[ColorRect] = []
 var _conteudo: Control
 var _barra: ProgressBar
 var _altura := 0.0
+var _texto := "ENTRANDO NA ARENA"
 
 
 func _init() -> void:
@@ -29,7 +30,9 @@ func _init() -> void:
 
 
 ## O nó precisa já estar na árvore (add_child) antes de chamar.
-func iniciar(caminho: String) -> void:
+## "texto" é o título mostrado na tela de carregamento.
+func iniciar(caminho: String, texto: String = "ENTRANDO NA ARENA") -> void:
+	_texto = texto
 	_construir()
 	await _fechar()
 	var ok: bool = await _carregar_e_trocar(caminho)
@@ -39,6 +42,7 @@ func iniciar(caminho: String) -> void:
 		await get_tree().process_frame
 	else:
 		# não achou a cena: recarrega o menu para não deixá-lo travado
+		get_tree().paused = false
 		get_tree().reload_current_scene()
 		await get_tree().process_frame
 		await get_tree().process_frame
@@ -92,7 +96,7 @@ func _construir() -> void:
 	centro.add_child(coluna)
 
 	var titulo := Label.new()
-	titulo.text = "ENTRANDO NA ARENA"
+	titulo.text = _texto
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_font_size_override("font_size", 44)
 	titulo.add_theme_color_override("font_color", COR_BORDA)
@@ -169,6 +173,8 @@ func _carregar_e_trocar(caminho: String) -> bool:
 	if cena == null:
 		return false
 	get_tree().change_scene_to_packed(cena)
+	get_tree().paused = false   # a nova cena começa rodando (a tela de fim de partida pausa o jogo)
+	Engine.time_scale = 1.0
 	return true
 
 

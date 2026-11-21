@@ -4,8 +4,8 @@ extends Control
 ## Requer também o arquivo transicao.gd (classe TransicaoCena) na mesma pasta.
 
 # --- CONFIGURAÇÕES: ajuste aqui ---
-const CENA_ARENA := "res://Scenes/arena.tscn"                    # caminho da sua cena "arena"
-const URL_COMUNIDADE := "https://rivals-arena-beta.vercel.app"  # link do site/comunidade
+const CENA_ARENA := "res://arena.tscn"                    # caminho da sua cena "arena"
+const URL_COMUNIDADE := "https://discord.gg/seu-convite"  # link do site/comunidade
 const PASTA := "res://menu/"                              # pasta onde estão as imagens
 
 # Tamanho da arte original (base para posicionar tudo proporcionalmente)
