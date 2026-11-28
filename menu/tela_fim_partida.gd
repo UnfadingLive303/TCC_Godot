@@ -11,7 +11,7 @@ enum Resultado { VITORIA, DERROTA }
 
 # --- CONFIGURAÇÕES: ajuste aqui ---
 const PASTA := "res://menu/"                           # onde estão coroa_vitoria.png / coroa_derrota.png
-const CAMINHO_MENU := ""                               # cena do menu; vazio = usa a Main Scene do projeto
+const CAMINHO_MENU := "res://Scenes/menu_principal.tscn"
 const CAMINHO_FONTE := ""                              # opcional, ex: "res://fonts/Orbitron-Bold.ttf"
 
 const COR_OURO := Color("ffc420")
@@ -359,25 +359,7 @@ func _ao_menu() -> void:
 	if not _pronto or _saindo:
 		return
 	_saindo = true
-	_iniciar_transicao(_caminho_do_menu(), "VOLTANDO AO MENU")
-
-
-## Descobre qual é a cena do menu: usa CAMINHO_MENU se existir; senão, a Main Scene do projeto.
-func _caminho_do_menu() -> String:
-	if CAMINHO_MENU != "" and ResourceLoader.exists(CAMINHO_MENU):
-		return CAMINHO_MENU
-
-	var principal := str(ProjectSettings.get_setting("application/run/main_scene", ""))
-	if principal.begins_with("uid://"):
-		var id := ResourceUID.text_to_id(principal)
-		if ResourceUID.has_id(id):
-			principal = ResourceUID.get_id_path(id)
-
-	if principal == "":
-		push_error("TelaFimDePartida: defina CAMINHO_MENU ou a Main Scene do projeto.")
-	else:
-		print("TelaFimDePartida: voltando ao menu em ", principal)
-	return principal
+	_iniciar_transicao(CAMINHO_MENU, "VOLTANDO AO MENU")
 
 
 func _iniciar_transicao(caminho: String, texto: String) -> void:
