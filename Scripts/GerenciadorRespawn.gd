@@ -20,6 +20,12 @@ extends Node
 @export var camera_lenta_final: bool = true
 @export_range(0.0, 3.0, 0.1) var atraso_tela_fim: float = 0.8   # segundos (tempo real) até a tela aparecer
 
+@export_group("HUD")
+@export var criar_hud: bool = true   # cria a HUD de repulsão (HudCombate) automaticamente
+
+@export_group("Sprites e animações")
+@export var animar_personagens: bool = true   # instala AnimadorPersonagem no jogador e no bot
+
 @export_group("Plataforma temporária")
 @export var sprite_plataforma: Texture2D
 @export var tamanho_visual_plataforma: Vector2 = Vector2(250, 150)
@@ -57,6 +63,9 @@ func _ready() -> void:
 	bot.global_position = spawner_bot.global_position
 
 	atualizar_alvo_bot()
+
+	if criar_hud:
+		add_child(HudCombate.new())
 
 	print("GERENCIADOR DE RESPAWN INICIADO!")
 
@@ -105,6 +114,14 @@ func configurar_personagem(
 	verificar_sistemas_combate(personagem)
 
 	call_deferred("aplicar_excecoes_colisao")
+
+	if animar_personagens:
+		call_deferred("_instalar_animador", personagem, grupo)
+
+
+func _instalar_animador(personagem: CharacterBody2D, grupo: String) -> void:
+	if is_instance_valid(personagem):
+		AnimadorPersonagem.instalar(personagem, grupo)
 
 
 func verificar_sistemas_combate(

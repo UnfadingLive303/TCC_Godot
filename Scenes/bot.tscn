@@ -7,7 +7,7 @@
 [ext_resource type="Script" uid="uid://dievt8b6at2fs" path="res://Scenes/VidaBot.gd" id="5_dl46b"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_iyva0"]
-size = Vector2(127.500015, 127.50001)
+size = Vector2(100, 100)
 
 [node name="Bot" type="CharacterBody2D" unique_id=1679805556]
 scale = Vector2(0.4, 0.4)
@@ -18,7 +18,6 @@ texture = ExtResource("1_ccb4n")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=488067929]
 position = Vector2(-1.2500069, 1.2500105)
-scale = Vector2(0.99999976, 0.99999976)
 shape = SubResource("RectangleShape2D_iyva0")
 
 [node name="IA" type="Node" parent="." unique_id=41440795]

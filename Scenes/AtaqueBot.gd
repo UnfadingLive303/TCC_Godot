@@ -81,7 +81,10 @@ func atualizar_hitbox() -> void:
 	if sprite != null and sprite.flip_h:
 		direcao = -1.0
 
-	hitbox.position = Vector2(distancia_hitbox * direcao, 0.0)
+	hitbox.position = Vector2(
+		distancia_hitbox * direcao,
+		0.0
+	)
 
 
 func executar_ataque(tipo: int) -> void:
@@ -105,11 +108,16 @@ func executar_ataque(tipo: int) -> void:
 			return
 
 	atacando = true
+
 	tempo_restante = intervalo_ataque
 
 	alvos_atingidos.clear()
 
 	atualizar_hitbox()
+
+	var animador := personagem.get_node_or_null("AnimadorPersonagem") as AnimadorPersonagem
+	if animador != null:
+		animador.atacar()
 
 	print("BOT: Ataque ", tipo, " iniciado!")
 
@@ -147,10 +155,19 @@ func detectar_alvos() -> void:
 
 		alvos_atingidos.append(corpo)
 
-		var direcao: Vector2 = corpo.global_position - personagem.global_position
+		var direcao: Vector2 = (
+			corpo.global_position - personagem.global_position
+		)
 
-		vida.receber_ataque(dano_atual, direcao, forca_atual)
+		vida.receber_ataque(
+			dano_atual,
+			direcao,
+			forca_atual
+		)
+
+		Repulsao.aplicar(corpo, personagem, 12.0)
 
 		print("BOT: Jogador atingido!")
 		print("BOT: Dano causado: ", dano_atual)
 		print("BOT: Força do golpe: ", forca_atual)
+		print("BOT: Repulsão adicionada: 12.0")

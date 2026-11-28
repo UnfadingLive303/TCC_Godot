@@ -83,15 +83,19 @@ func atacar() -> void:
 		return
 
 	atacando = true
+
 	tempo_restante = intervalo_ataque
 
 	alvos_atingidos.clear()
 
 	atualizar_hitbox()
 
+	var animador := personagem.get_node_or_null("AnimadorPersonagem") as AnimadorPersonagem
+	if animador != null:
+		animador.atacar()
+
 	print("JOGADOR: Ataque iniciado!")
 
-	# Aguarda a atualização da física.
 	await get_tree().physics_frame
 
 	if not is_inside_tree():
@@ -133,5 +137,8 @@ func detectar_alvos() -> void:
 			forca_knockback
 		)
 
+		Repulsao.aplicar(corpo, personagem, 12.0)
+
 		print("JOGADOR: Bot atingido!")
 		print("JOGADOR: Dano causado: ", dano)
+		print("JOGADOR: Repulsão adicionada: 12.0")

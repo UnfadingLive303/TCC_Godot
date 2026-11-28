@@ -18,9 +18,9 @@ enum Estado {
 @export var distancia_pulo: float = 75.0
 
 @export_group("Decisões")
-@export var intervalo_decisao_minimo: float = 0.10
-@export var intervalo_decisao_maximo: float = 0.22
-@export_range(0.0, 1.0) var chance_esquivar: float = 0.90
+@export var intervalo_decisao_minimo: float = 0.05
+@export var intervalo_decisao_maximo: float = 0.10
+@export_range(0.0, 1.0) var chance_esquivar: float = 0.75
 @export_range(0.0, 1.0) var chance_atacar: float = 0.95
 
 @export_group("Pulos")
@@ -40,6 +40,7 @@ var estado: Estado = Estado.PERSEGUIR
 var tempo_decisao: float = 0.0
 var tempo_pulo: float = 0.0
 var tempo_busca: float = 0.0
+var reagiu_ao_golpe: bool = false
 
 
 func _ready() -> void:
@@ -62,7 +63,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not is_instance_valid(personagem):
+	if not is_instance_valid(personagem) or not is_instance_valid(sistema_ataque):
 		return
 
 	tempo_decisao = maxf(tempo_decisao - delta, 0.0)
@@ -82,8 +83,14 @@ func _physics_process(delta: float) -> void:
 
 	atualizar_direcao()
 
+	var jogador_atacando := verificar_ataque_jogador()
+	if not jogador_atacando:
+		if reagiu_ao_golpe:
+			tempo_decisao = 0.0
+		reagiu_ao_golpe = false
+
 	if tempo_decisao <= 0.0:
-		analisar_situacao()
+		analisar_situacao(jogador_atacando)
 
 
 func buscar_jogador() -> void:
@@ -105,7 +112,7 @@ func atualizar_direcao() -> void:
 	)
 
 
-func analisar_situacao() -> void:
+func analisar_situacao(jogador_atacando: bool) -> void:
 	var diferenca_x: float = (
 		alvo.global_position.x - personagem.global_position.x
 	)
@@ -119,17 +126,20 @@ func analisar_situacao() -> void:
 
 	var direcao: float = signf(diferenca_x)
 
-	var jogador_atacando: bool = verificar_ataque_jogador()
-
-	# Prioridade: esquivar de ataques próximos.
+	# Reage uma vez por golpe e só quando a hitbox ameaça o bot.
 	if (
 		jogador_atacando
+		and not reagiu_ao_golpe
 		and distancia_x <= distancia_esquiva
 		and distancia_y <= alcance_vertical
-		and randf() <= chance_esquivar
+		and limites_colisao(ataque_jogador.hitbox).intersects(
+			limites_colisao(personagem).grow(8.0)
+		)
 	):
-		esquivar(direcao)
-		return
+		reagiu_ao_golpe = true
+		if randf() <= chance_esquivar:
+			esquivar(direcao)
+			return
 
 	# Persegue o jogador quando ele está em uma plataforma superior.
 	if diferenca_y > distancia_pulo:
@@ -137,18 +147,29 @@ func analisar_situacao() -> void:
 		tentar_pular()
 		return
 
-	# Aproxima-se rapidamente quando está longe.
-	if distancia_x > distancia_ataque:
+	var deslocamento := Vector2(sistema_ataque.distancia_hitbox, 0.0)
+	if direcao < 0.0:
+		deslocamento.x *= -1.0
+	var limites_golpe := limites_colisao(sistema_ataque.hitbox)
+	limites_golpe.position += personagem.to_global(deslocamento) - sistema_ataque.hitbox.global_position
+	if distancia_x > distancia_ataque or not limites_golpe.intersects(limites_colisao(alvo)):
 		perseguir(direcao)
 		return
 
-	# Evita ficar colado no jogador.
-	if distancia_x < distancia_minima:
+	var em_recarga: bool = sistema_ataque.tempo_restante > 0.0
+	if em_recarga and not sistema_ataque.atacando and distancia_x < distancia_minima:
 		reposicionar(direcao)
 		return
 
-	# Ataca quando encontra uma oportunidade.
-	combater()
+	var contra_ataque: bool = not jogador_atacando and is_instance_valid(ataque_jogador) and ataque_jogador.tempo_restante > 0.0
+	combater(not em_recarga and not sistema_ataque.atacando, contra_ataque)
+
+
+func limites_colisao(corpo: Node2D) -> Rect2:
+	for filho in corpo.get_children():
+		if filho is CollisionShape2D and filho.shape != null:
+			return filho.global_transform * filho.shape.get_rect()
+	return Rect2()
 
 
 func verificar_ataque_jogador() -> bool:
@@ -174,19 +195,15 @@ func perseguir(direcao: float) -> void:
 	)
 
 
-func combater() -> void:
+func combater(pode_atacar: bool, contra_ataque: bool) -> void:
 	estado = Estado.COMBATER
 
 	personagem.definir_direcao(0.0)
 
-	if (
-		not sistema_ataque.atacando
-		and sistema_ataque.tempo_restante <= 0.0
-		and randf() <= chance_atacar
-	):
-		iniciar_ataque()
+	if pode_atacar and (contra_ataque or randf() <= chance_atacar):
+		iniciar_ataque(contra_ataque)
 
-	tempo_decisao = randf_range(0.12, 0.25)
+	tempo_decisao = randf_range(intervalo_decisao_minimo, intervalo_decisao_maximo)
 
 
 func esquivar(direcao: float) -> void:
@@ -200,7 +217,7 @@ func esquivar(direcao: float) -> void:
 	):
 		tentar_pular()
 
-	tempo_decisao = randf_range(0.18, 0.30)
+	tempo_decisao = randf_range(0.10, 0.16)
 
 	print("BOT IA: Esquivando do ataque!")
 
@@ -210,7 +227,7 @@ func reposicionar(direcao: float) -> void:
 
 	personagem.definir_direcao(-direcao)
 
-	tempo_decisao = randf_range(0.15, 0.25)
+	tempo_decisao = randf_range(intervalo_decisao_minimo, intervalo_decisao_maximo)
 
 
 func tentar_pular() -> void:
@@ -228,11 +245,13 @@ func tentar_pular() -> void:
 	)
 
 
-func iniciar_ataque() -> void:
+func iniciar_ataque(contra_ataque: bool) -> void:
 	var sorteio: int = randi_range(1, 100)
 	var tipo: int
 
-	if sorteio <= 45:
+	if contra_ataque:
+		tipo = 3
+	elif sorteio <= 45:
 		tipo = 1
 	elif sorteio <= 85:
 		tipo = 2
